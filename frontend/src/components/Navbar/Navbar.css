@@ -1,0 +1,60 @@
+.navbar {
+    position: static;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgb(40, 155, 145);
+    color: aqua;
+    top: 0;
+    width: 100%;
+    height: 80px;
+    z-index: 1000; /* Ensure the navbar is above other content */
+    padding: 0 20px; /* Optional: Add some padding to the navbar */
+}
+.navbar-logo {
+    
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    text-decoration: none;
+    margin-left: 3cm; 
+}
+
+.navbar-center {
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.navbar-item {
+    margin: 0 15px;
+    text-decoration: none;
+    color:white;
+    font-size: 18px;
+}
+
+.navbar-item:hover {
+    text-decoration: underline;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-signup {
+    background-color: rgb(40, 155, 145);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    margin-right: 2cm;
+}
+
+.navbar-signup:hover {
+    background-color:white;
+    color:rgb(40, 155, 145);
+} 
+
+
