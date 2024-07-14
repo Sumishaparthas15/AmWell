@@ -46,7 +46,7 @@ const AdminLogin = () => {
     <div>
       <div className="logindiv bg-white" style={styles.logindiv}>
         <div className="container p-5">
-          <h1 className="text-dark">Login page</h1>
+          <h1 className="text-dark">Admin Login</h1>
           <br />
 
           <form onSubmit={handlelogin}>

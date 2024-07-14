@@ -12,7 +12,7 @@ const HospitalRequests = () => {
     
     const fetchApprovedHospitals =async() =>{
         try{
-            const response = await axios.get('http://localhost:8080/api/approved_hospital/');
+            const response = await axios.get('http://localhost:8080/api/HospitalListView/');
             setApprovedHospitals(response.data)
         }catch (error) {
             console.error('Error fetching approved hospitals:', error);

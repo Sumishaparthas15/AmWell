@@ -3,9 +3,9 @@ import {Link} from 'react-router-dom'
 
 const AdminPanel = () => {
     const styles={
-        department_items:{
-            marginLeft: '20px',
-        },
+        // department_items:{
+        //     marginLeft: '20px',
+        // },
         admin_container:{
             width: '250px',
             backgroundColor: 'rgb(40, 155, 145)',
@@ -16,7 +16,10 @@ const AdminPanel = () => {
             zIndex: 999,
             
         },
-       
+        logo:{
+            marginLeft: '30px',
+        }
+
 
     }
     const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -24,13 +27,21 @@ const AdminPanel = () => {
     const toggleDropdown = () => {
         setDropdownVisible(!dropdownVisible);
     };
+   
+    const handleLogout = () => {
+            // Assuming you clear the token from localStorage upon logout
+            localStorage.removeItem('token');
+            // Redirect to login page (replace '/login' with your actual login route)
+            window.location.href = '/login';
+        };
 
   return (
     <div>
         <div className='admin_container' style={styles.admin_container}>
             <div class="admin-sidebar">
                  <div class="sidebar-header">
-                            <h3>Am Well</h3>
+                    <h5 >Admin Dashboard</h5>
+                            <h3 className='logo'style={styles.logo}>MediLink</h3>
                  </div>
                  <br></br>
                     <ul class="sidebar-menu">
@@ -58,7 +69,11 @@ const AdminPanel = () => {
                     <ul class="sidebar-menu">
                         <Link to='/Premium' className="navbar-brand">Premium</Link>
                     </ul>
+                    <br></br><ul>
+                    <button onClick={handleLogout}>Logout</button>
 
+                    </ul>
+                   
                     
                     
             </div>
