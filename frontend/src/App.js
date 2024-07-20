@@ -20,6 +20,12 @@ import HosDepPage from './Hospital/HosPages/HosDepPage';
 import Hospital from './Home/Home/Hospital';
 import Bookup from './Patients/PatComponents/Bookup';
 
+import OTPVerification from './Home/Home/OTPVerification';
+import HospiAdditional from './Home/Home/HospiAdditional';
+import LoginOTP from './Home/Home/LoginOTP';
+import HospitalDepartment from './Hospital/HosComponents/HospitalDepartment';
+import HospitalProfile from './Hospital/HosComponents/HospitalProfile';
+
 const App = () => (
     <div>
         <Routes>
@@ -40,10 +46,14 @@ const App = () => (
             {/* HOSPITAL */}
 
             <Route path="/hossignup" element={<HosSignUp />} />
+            <Route path="/otpsignup" element={<OTPVerification />} />
+            <Route path="/hospiAdditional" element={<HospiAdditional />} />
             <Route path="/hospital_login" element={<HosLogin />} />
+            <Route path="/otp_login" element={<LoginOTP />} />
             <Route path="/hospital" element={<Hospital />} />
             <Route path="/hospitalView" element={<HospitalViewPage />} />
-            <Route path="/hospital_departments" element={<HosDepPage />} />
+            <Route path="/hospital_departments" element={<HospitalDepartment />} />
+            <Route path="/hospital_profile" element={<HospitalProfile />} />
 
 
             {/* ADMIN */}
@@ -58,5 +68,6 @@ const App = () => (
         </Routes>
     </div>
 );
+
 
 export default App;

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from django.http import HttpResponse
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -25,6 +25,16 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.auth.backends import BaseBackend
 from django.contrib.auth import get_user_model
 from rest_framework.generics import GenericAPIView
+import random
+from django.utils import timezone
+from django.core.mail import send_mail, BadHeaderError
+from rest_framework import viewsets, status
+from django.db.models import Q
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import viewsets, mixins
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from rest_framework_jwt.utils import jwt_decode_handler
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -34,9 +44,14 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add custom claims
         token['username'] = user.username
         token['is_admin'] = user.is_superuser
-        # ...
+        
+        if hasattr(user, 'hospital'):
+            token['hospital_id'] = user.hospital.id
+            token['hospital_name'] = user.hospital.hospital_name
 
         return token
+
+        
     
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class=MyTokenObtainPairSerializer
@@ -61,9 +76,6 @@ class TestAuthenticationView(GenericAPIView):
         }
         return Response(data,status=status.HTTP_200_OK)
     
-
-
-
 @api_view(['POST'])
 def hospital_registration(request):
     if request.method == 'POST':
@@ -71,7 +83,98 @@ def hospital_registration(request):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+
+
+class GenerateOTPView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        user = User.objects.filter(email=email).first()
+        print(user, "user............,")
+        if not user:
+            hospital = Hospital.objects.filter(email=email).first()
+            print(hospital, "...............hospital")
+
+        if user:
+            otp = random.randint(100000, 999999)
+            expires_at = timezone.now() + timezone.timedelta(minutes=10)
+            OTP.objects.create(user=user, otp=otp, expires_at=expires_at)
+
+            try:
+                send_mail(
+                    'Your OTP Code',
+                    f'Your OTP code is {otp}',
+                    'sumishasudha392@gmail.com',
+                    [email],
+                    fail_silently=False,
+                )
+            except BadHeaderError:
+                return Response({"error": "Invalid header found."}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                print(e)
+                return Response({"error": "Failed to send email. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({"message": "OTP sent to email"}, status=status.HTTP_200_OK)
+        elif hospital:
+            print('.................................')
+            otp = random.randint(100000, 999999)
+            print(otp)
+            expires_at = timezone.now() + timezone.timedelta(minutes=10)
+            HospitalOTP.objects.create(hospital=hospital, otp=otp, expires_at=expires_at)
+            print('mnbvcx........',hospital,otp,expires_at)
+
+            try:
+                print("try.........")
+                send_mail(
+                    'Your OTP Code',
+                    f'Your OTP code is {otp}',
+                    'sumishasudha392@gmail.com',
+                    [email],
+                    
+                    fail_silently=False,
+                )
+            except BadHeaderError:
+                return Response({"error": "Invalid header found."}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                print(e)
+                print(email)
+                return Response({"error": "Failed to send email. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({"message": "OTP sent to email"}, status=status.HTTP_200_OK)
+        print(hospital, "..................")
+        return Response({"error": "User or Hospital not found"}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class VerifyOTPView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        hospital = Hospital.objects.filter(email=email).first()
+        print(hospital)
+
+        if hospital:
+            print(",,,,,,,,")
+            otp_obj = HospitalOTP.objects.filter(hospital=hospital, otp=otp, expires_at__gte=timezone.now()).first()
+            if otp_obj:
+                otp_obj.delete()
+                return Response({"message": "OTP verified"}, status=status.HTTP_200_OK)
+            return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"error": "Hospital not found"}, status=status.HTTP_400_BAD_REQUEST)
+    
+class HospitalAdditional(APIView):
+    def patch(self, request, hospitalEmail):  # Adjust parameter name to match URL
+        try:
+            instance = Hospital.objects.get(email=hospitalEmail)  # Query based on email
+        except Hospital.DoesNotExist:
+            return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = HospitalAdditionalInfoSerializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
 class HospitalLoginView(APIView):
     def post(self, request):
@@ -95,16 +198,39 @@ class HospitalLoginView(APIView):
             'refresh': tokens['refresh'],
             'access': tokens['access'],
         })
-    
+class DepartmentListView(APIView):
+    def get(self, request, hospitalEmail):
+        try:
+            hospital = Hospital.objects.get(email=hospitalEmail)
+        except Hospital.DoesNotExist:
+            return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
 
-def hospital_logout(request):
-    if request.user.is_authenticated:
-        logout(request)
-        request.session.flush()
-        return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
-    else:
-        return Response({"message": "Not logged in"}, status=status.HTTP_400_BAD_REQUEST) 
+        departments = Department.objects.filter(hospital=hospital)
+        serializer = DepartmentSerializer(departments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+class DepartmentCreateView(APIView):
+    def post(self, request, hospitalEmail):
+        try:
+            hospital = Hospital.objects.get(email=hospitalEmail)
+        except Hospital.DoesNotExist:
+            return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data.copy()
+        data['hospital'] = hospital.id
+        serializer = DepartmentSerializer(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# @csrf_exempt
+# def hospital_logout(request):
+#     if request.method == 'POST':
+#         logout(request)
+#         return JsonResponse({'message': 'Logout successful'})
+#     return JsonResponse({'error': 'Invalid method'}, status=405)
 
 # admin
 class AdminLoginView(APIView):
@@ -135,7 +261,7 @@ class ApproveHospitalView(APIView):
             return Response({'message': 'Hospital approved successfully'}, status=status.HTTP_200_OK)
         except Hospital.DoesNotExist:
             return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+
 class HospitalListView(APIView):
     def get(self, request):
         hospitals = Hospital.objects.filter(is_approved=True)
@@ -199,22 +325,22 @@ def create_department(request):
 
 
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def department_list(request):
-    if request.method == 'GET':
-        departments = Department.objects.filter(hospital=request.user.hospital)
-        serializer = DepartmentSerializer(departments, many=True)
-        return Response(serializer.data)
+# @api_view(['GET', 'POST'])
+# @permission_classes([IsAuthenticated])
+# def department_list(request):
+#     if request.method == 'GET':
+#         departments = Department.objects.filter(hospital=request.user.hospital)
+#         serializer = DepartmentSerializer(departments, many=True)
+#         return Response(serializer.data)
     
-    elif request.method == 'POST':
-        serializer = DepartmentSerializer(data=request.data, context={'request': request})
-        print(',,,,,,,,,,,,,,,,,')
-        print(serializer)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     elif request.method == 'POST':
+#         serializer = DepartmentSerializer(data=request.data, context={'request': request})
+#         print(',,,,,,,,,,,,,,,,,')
+#         print(serializer)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 

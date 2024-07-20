@@ -1,127 +1,197 @@
-
 import React, { useState } from 'react';
-import './SignUp.css';
-import Navbar from '../Navbar/Navbar';
-import { Link, useNavigate } from 'react-router-dom';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import CssBaseline from '@mui/material/CssBaseline';
+import TextField from '@mui/material/TextField';
+import Link from '@mui/material/Link';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import toast, { Toaster } from 'react-hot-toast';
+import Navbar from '../Navbar/Navbar';
+import { useNavigate } from 'react-router-dom';
+import dr from '../../images/dr3.jpg';
+import OTPVerification from './OTPVerification';
+
+const theme = createTheme();
+
+function Copyright(props) {
+  return (
+    <Typography variant="body2" color="text.secondary" align="center" {...props}>
+      {'Copyright © '}
+      <Link color="inherit" href="https://mui.com/">
+        Your Website
+      </Link>{' '}
+      {new Date().getFullYear()}
+      {'.'}
+    </Typography>
+  );
+}
 
 const HosSignUp = () => {
   const navigate = useNavigate();
-  
+
   const [hospitalName, setHospitalName] = useState('');
   const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [district, setDistrict] = useState('');
-  const [pinCode, setPinCode] = useState('');
-  const [uploadImage, setUploadImage] = useState(null); 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
 
   const signupSubmit = async (e) => {
     e.preventDefault();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (hospitalName.trim() === "") {
-        toast.error("Please enter hospital name");
-        return;
+      toast.error("Please enter hospital name");
+      return;
     } else if (!emailRegex.test(email)) {
-        toast.error("Enter a valid Email Id");
-        return;
+      toast.error("Enter a valid Email Id");
+      return;
     } else if (password !== confirmPassword) {
-        toast.error("Passwords didn't match!");
-        return;
-    } else if (phoneNumber.length !== 10) {
-        toast.error("Phone number should contain exactly 10 digits!");
-        return;
+      toast.error("Passwords didn't match!");
+      return;
     } else if (password.length < 6) {
-        toast.error("Password should contain at least six characters!");
-        return;
+      toast.error("Password should contain at least six characters!");
+      return;
     }
 
     const formData = new FormData();
-    formData.append('hospital_name', hospitalName);  // Match Django field names
+    formData.append('hospital_name', hospitalName);
     formData.append('email', email);
-    formData.append('phone_number', phoneNumber);
-    formData.append('address', address);
-    formData.append('city', city);
-    formData.append('district', district);
-    formData.append('pin_code', pinCode);
-    formData.append('photo', uploadImage);  // Match Django field names
     formData.append('password', password);
 
     try {
-        const response = await fetch('http://127.0.0.1:8080/api/hossignup/', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
+      const response = await fetch('http://127.0.0.1:8080/api/hossignup/', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
 
-        if (response.status === 400) {
-            toast.error('Username or Email id already exist!');
-            console.log(hospitalName, email, password);
-            navigate('/hossignup');
-        } else {
-            toast.success("User Registered successfully!");
-            console.log(hospitalName, email, password);
-            navigate('/hospital_login');
-        }
-    } catch (err) {
-        console.error("Some error occurred:", err);
-        toast.error("Some error occurred, please try again later!");
+      if (response.status === 400) {
+        toast.error('Username or Email id already exist!');
         navigate('/hossignup');
+      } else {
+        toast.success("User Registered successfully! OTP sent to your email.");
+        setOtpSent(true);
+        localStorage.setItem('hospitalEmail', email); 
+        await fetch('http://127.0.0.1:8080/api/generate-otp/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+      }
+    } catch (err) {
+      console.error("Some error occurred:", err);
+      toast.error("Some error occurred, please try again later!");
+      navigate('/hossignup');
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setUploadImage(file);
-  };
-
   return (
-    <div>
-      <Toaster position='top-right' reverseOrder={false} />
+    <div style={{ 
+      backgroundImage: `url(${dr})`, 
+      backgroundSize: 'cover', 
+      backgroundPosition: 'center', 
+      height: '100vh', 
+      width: '100vw', 
+      display: 'flex', 
+      flexDirection: 'column' 
+    }}>
       <Navbar />
-      <div className='signupdiv'>
-        <h2 className='title'>Register as Hospital</h2>
-        <form onSubmit={signupSubmit}>
-          <div className="mb-3">
-            <label htmlFor="hospitalName" className="form-label">Hospital Name</label>
-            <input type="text" className="form-control" id="hospitalName" name="hospitalName" value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} required />
-
-            <label htmlFor="email" className="form-label">Email</label>
-            <input type="email" className="form-control" id="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-
-            <label htmlFor="phoneNumber" className="form-label">Phone number</label>
-            <input type="tel" className="form-control" id="phoneNumber" name="phoneNumber" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
-
-            <label htmlFor="address" className="form-label">Address</label>
-            <input type="text" className="form-control" id="address" name="address" value={address} onChange={(e) => setAddress(e.target.value)} required />
-
-            <label htmlFor="city" className="form-label">City</label>
-            <input type="text" className="form-control" id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} required />
-
-            <label htmlFor="district" className="form-label">District</label>
-            <input type="text" className="form-control" id="district" name="district" value={district} onChange={(e) => setDistrict(e.target.value)} required />
-
-            <label htmlFor="pinCode" className="form-label">Pin-Code</label>
-            <input type="text" className="form-control" id="pinCode" name="pinCode" value={pinCode} onChange={(e) => setPinCode(e.target.value)} required />
-
-            <label htmlFor="uploadImage" className="form-label">Upload Image</label>
-            <input type="file" className="form-control" id="uploadImage" name="uploadImage" onChange={handleFileChange} required />
-
-            <label htmlFor="password" className="form-label">Password</label>
-            <input type="password" className="form-control" id="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-
-            <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-            <input type="password" className="form-control" id="confirmPassword" name="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-
-            <br />
-            <button type="submit" className="loginbtn">SignUp</button>
-          </div>
-        </form>
-        <p>Already have an account? <Link to="/hospital_login">Login</Link></p>
-      </div>
+      <ThemeProvider theme={theme}>
+        <Container component="main" maxWidth="xs">
+          <CssBaseline />
+          <Toaster position='top-right' reverseOrder={false} />
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+              <LockOutlinedIcon />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Sign up
+            </Typography>
+            {!otpSent ? (
+              <Box component="form" noValidate onSubmit={signupSubmit} sx={{ mt: 3 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      name="hospitalName"
+                      required
+                      fullWidth
+                      id="hospitalName"
+                      label="Hospital Name"
+                      value={hospitalName}
+                      onChange={(e) => setHospitalName(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      required
+                      fullWidth
+                      id="email"
+                      label="Email Address"
+                      name="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      required
+                      fullWidth
+                      name="password"
+                      label="Password"
+                      type="password"
+                      id="password"
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      required
+                      fullWidth
+                      name="confirmPassword"
+                      label="Confirm Password"
+                      type="password"
+                      id="confirmPassword"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </Grid>
+                </Grid>
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2 }}
+                >
+                  Submit
+                </Button>
+                <Grid container justifyContent="flex-end">
+                  <Grid item>
+                    <Link href="/hospital_login" variant="body2">
+                      Already have an account? Sign in
+                    </Link>
+                  </Grid>
+                </Grid>
+              </Box>
+            ) : (
+              <OTPVerification email={email} />
+            )}
+          </Box>
+          <Copyright sx={{ mt: 5 }} />
+        </Container>
+      </ThemeProvider>
     </div>
   );
 };

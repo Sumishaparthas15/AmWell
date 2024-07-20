@@ -1,5 +1,6 @@
 import React from 'react'
-import HospitalPanel from '../HosComponents/HospitalPanel/HospitalPanel'
+import HospitalPanel from '../HosComponents/HospitalPanel'
+
 
 const HospitalViewPage = () => {
   return (

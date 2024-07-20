@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -64,6 +65,16 @@ class Hospital(AbstractBaseUser, PermissionsMixin):
     photo = models.ImageField(upload_to='hospital_photos/')
     is_approved = models.BooleanField(default=False)
 
+    ownership_details = models.TextField(default='Hospital ownership details') 
+    owner_photo = models.ImageField(upload_to='owner_photos/', default='default_owner_photo.jpg') 
+    license_number = models.CharField(max_length=100, default='0000')
+    license_expiry_date = models.DateField(default=timezone.now) 
+    accreditations = models.CharField(max_length=255, default='') 
+    acc_certification = models.FileField(upload_to='acc_certifications/', null=True, blank=True)
+    admin_contact_person = models.CharField(max_length=255, default='Unknown')
+    admin_contact_phone = models.CharField(max_length=20, default='')
+
+
     groups = models.ManyToManyField(Group, related_name='hospital_groups', blank=True)
     user_permissions = models.ManyToManyField(Permission, related_name='hospital_permissions', blank=True)
 
@@ -86,16 +97,31 @@ class Hospital(AbstractBaseUser, PermissionsMixin):
             'refresh': str(refresh),
             'access': str(access_token),
         }
+class OTP(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+class HospitalOTP(models.Model):
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()    
+    
+        
 class Department(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,unique=True)
     image = models.ImageField(upload_to='department_images/')
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name='departments')
-
-    def __str__(self):
-        return self.name
 
     class Meta:
         db_table = 'api_department'
         managed = True
         verbose_name = 'Department'
         verbose_name_plural = 'Departments'
+
+    def __str__(self):
+        return self.name
+
+    

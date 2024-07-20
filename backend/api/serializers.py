@@ -11,7 +11,7 @@ class HospitalRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Hospital
-        fields = ['id','hospital_name', 'email', 'phone_number', 'address', 'city', 'district', 'pin_code', 'photo', 'password']
+        fields = ['id','hospital_name', 'email',  'password']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -19,7 +19,12 @@ class HospitalRegistrationSerializer(serializers.ModelSerializer):
         hospital.set_password(password)  # Set and hash the password
         hospital.save()
         return hospital
-    
+class HospitalAdditionalInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospital
+        fields = '__all__'  # Or explicitly list fields that can be updated
+
+   
 class HospitalLoginSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField()
@@ -85,13 +90,23 @@ class UserLoginSerializer(serializers.Serializer):
         attrs['user'] = user
         return attrs
     
+# class DepartmentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Department
+#         fields = ['id', 'name', 'image', 'hospital']
+#         read_only_fields = ['id', 'hospital']  # Ensure hospital is read-only during creation
+
+#     def create(self, validated_data):
+#         hospital = self.context['request'].user.hospital  # Access hospital from request user
+#         department = Department.objects.create(hospital=hospital, **validated_data)
+#         return department
+
+class HospitalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospital
+        fields = '__all__'
+
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = ['id', 'name', 'image', 'hospital']
-        read_only_fields = ['id', 'hospital']  # Ensure hospital is read-only during creation
-
-    def create(self, validated_data):
-        hospital = self.context['request'].user.hospital  # Access hospital from request user
-        department = Department.objects.create(hospital=hospital, **validated_data)
-        return department
+        fields = '__all__'

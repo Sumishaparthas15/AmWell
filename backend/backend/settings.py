@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'knox',
     
     'api', 
 ]
@@ -58,7 +59,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',)
     
 }
 SIMPLE_JWT = {
@@ -190,3 +191,9 @@ AUTHENTICATION_BACKENDS = [
     'api.backends.HospitalBackend',
     
 ]
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com' 
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'sumishasudha392@gmail.com'
+EMAIL_HOST_PASSWORD = 'ebvd zdgw thrs sgsf'

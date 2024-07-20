@@ -13,14 +13,16 @@ urlpatterns = [
    
 
     #hospital
+    path('generate-otp/', GenerateOTPView.as_view(), name='generate_otp'),
+    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('hossignup/', views.hospital_registration, name='hospital-registration'),
+    path('HospitalAdditional/<str:hospitalEmail>/', HospitalAdditional.as_view(), name='hospital-additional'),
     path('hospital_login/', HospitalLoginView.as_view(), name='hospital_login'),
-    # path('departments/', views.create_department, name='create_department'),
-    path('hospital_logout/', views.hospital_logout, name='hospital_logout'),
-    # path('departments/', views.department_list, name='department_list'),
-
-    path('departments/', views.department_list, name='department_list'),
-    path('departments/<int:pk>/', views.department_detail, name='department_detail'),
+    path('departments/<str:hospitalEmail>/', DepartmentListView.as_view(), name='department-list'),
+    path('departments/<str:hospitalEmail>/create/', DepartmentCreateView.as_view(), name='department-create'),
+   
+    # path('hospital_logout/', views.hospital_logout, name='hospital_logout'),
+    path('departments/', views.department_list),
     
    
     #admin

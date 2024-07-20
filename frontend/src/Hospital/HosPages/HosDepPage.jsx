@@ -1,5 +1,5 @@
 import React from 'react'
-import HospitalDepartment from '../HosComponents/HospitalPanel/HospitalDepartment'
+import HospitalDepartment from '../HosComponents/HospitalDepartment'
 
 const HosDepPage = () => {
   return (
