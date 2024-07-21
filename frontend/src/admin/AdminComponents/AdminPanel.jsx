@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import {Link} from 'react-router-dom'
+import { Link, useNavigate, Outlet } from 'react-router-dom';
+
 
 const AdminPanel = () => {
+    const navigate = useNavigate();
     const styles={
         // department_items:{
         //     marginLeft: '20px',
@@ -29,11 +31,9 @@ const AdminPanel = () => {
     };
    
     const handleLogout = () => {
-            // Assuming you clear the token from localStorage upon logout
-            localStorage.removeItem('token');
-            // Redirect to login page (replace '/login' with your actual login route)
-            window.location.href = '/login';
-        };
+        localStorage.removeItem('token');
+        navigate('/admin');
+      };
 
   return (
     <div>
@@ -45,7 +45,7 @@ const AdminPanel = () => {
                  </div>
                  <br></br>
                     <ul class="sidebar-menu">
-                        <Link to='overview' className="navbar-brand">OverView</Link>
+                        <Link to='/overview' className="navbar-brand">OverView</Link>
                     </ul>
                     <ul class="sidebar-menu">
                         <Link to='/patients' className="navbar-brand">Patients</Link>
@@ -58,7 +58,7 @@ const AdminPanel = () => {
                     </ul>
                     
                     <ul class="sidebar-menu">
-                        <Link to='/Status' className="navbar-brand">Block & Unblock</Link>
+                        <Link to='/status' className="navbar-brand">Block & Unblock</Link>
                     </ul>
                     <ul class="sidebar-menu">
                         <Link to='/Complaints' className="navbar-brand">Complaints</Link>

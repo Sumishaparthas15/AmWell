@@ -14,7 +14,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import Navbar from '../Navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import dr from '../../images/dr3.jpg';
+import dr from '../../images/hos6.jpg';
 
 const theme = createTheme();
 
@@ -31,8 +31,8 @@ const HospiAdditional = () => {
     admin_contact_person: '',
     admin_contact_phone: '',
     accCertification: null,
-    ownershipImage: null,
-    accreditations:'',
+   
+    accreditations: '',
   });
 
   const [hospitalEmail, setHospitalEmail] = useState('');
@@ -54,18 +54,19 @@ const HospiAdditional = () => {
     const { name, files } = e.target;
     setHospitalData({ ...hospitalData, [name]: files[0] });
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
   
     const formData = new FormData();
     Object.keys(hospitalData).forEach(key => {
-      formData.append(key, hospitalData[key]);
+      if (hospitalData[key] !== null && hospitalData[key] !== '') {
+        formData.append(key, hospitalData[key]);
+      }
     });
   
     try {
       const url = `http://localhost:8080/api/HospitalAdditional/${encodeURIComponent(hospitalEmail)}/`;
-      console.log('PATCH request URL:', url); // Debugging line
       await axios.patch(url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -78,6 +79,8 @@ const HospiAdditional = () => {
       toast.error('Failed to submit the form');
     }
   };
+  
+  
 
   return (
     <div
@@ -134,7 +137,7 @@ const HospiAdditional = () => {
                     id="phone_number"
                     label="Hospital Phone Number"
                     name="phone_number"
-                    value={hospitalData.hospitalPhone}
+                    value={hospitalData.phone_number}
                     onChange={handleInputChange}
                   />
                 </Grid>
@@ -151,20 +154,6 @@ const HospiAdditional = () => {
                     onChange={handleInputChange}
                   />
                 </Grid>
-                {/* <Grid item xs={12}>
-                  <Typography variant="h6" style={{ color: 'black' }}>Upload Ownership image :</Typography>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                    name="ownershipImage"
-                  />
-                  {hospitalData.ownershipImage && (
-                    <Typography variant="body2" style={{ color: 'black', marginTop: '8px' }}>
-                      {hospitalData.ownershipImage.name}
-                    </Typography>
-                  )}
-                </Grid> */}
                 <Grid item xs={12}>
                   <Typography variant="h6" style={{ color: 'black' }}>Legal and Licensing Information:</Typography>
                   <TextField
@@ -193,17 +182,15 @@ const HospiAdditional = () => {
 
                 <Grid item xs={12}>
                   <Typography variant="h6" style={{ color: 'black' }}>Accreditations and Certifications:</Typography>
-                  <Grid item xs={12}>
                   <TextField
                     required
                     fullWidth
                     id="accreditations"
-                    label="accreditations"
+                    label="Accreditations"
                     name="accreditations"
                     value={hospitalData.accreditations}
                     onChange={handleInputChange}
                   />
-                </Grid>
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"

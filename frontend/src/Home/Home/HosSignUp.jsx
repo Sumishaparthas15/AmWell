@@ -13,7 +13,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import toast, { Toaster } from 'react-hot-toast';
 import Navbar from '../Navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
-import dr from '../../images/dr3.jpg';
+import dr from '../../images/hos5.jpg';
 import OTPVerification from './OTPVerification';
 
 const theme = createTheme();

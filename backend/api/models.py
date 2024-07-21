@@ -64,7 +64,7 @@ class Hospital(AbstractBaseUser, PermissionsMixin):
     pin_code = models.CharField(max_length=10)
     photo = models.ImageField(upload_to='hospital_photos/')
     is_approved = models.BooleanField(default=False)
-
+    is_active = models.BooleanField(default=True)
     ownership_details = models.TextField(default='Hospital ownership details') 
     owner_photo = models.ImageField(upload_to='owner_photos/', default='default_owner_photo.jpg') 
     license_number = models.CharField(max_length=100, default='0000')

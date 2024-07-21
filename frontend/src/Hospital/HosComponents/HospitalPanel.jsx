@@ -28,7 +28,7 @@ const HospitalPanel = () => {
 
     const handleLogout = () => {
         // Remove email and other session data from localStorage
-        localStorage.removeItem('hosemail');
+        localStorage.removeItem('hospitalEmail');
         // Optionally remove other session-related data here
         // Navigate to login page
         navigate('/hospital_login');

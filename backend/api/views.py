@@ -27,6 +27,9 @@ from django.contrib.auth import get_user_model
 from rest_framework.generics import GenericAPIView
 import random
 from django.utils import timezone
+from django.core.mail import EmailMessage
+from django.conf import settings
+
 from django.core.mail import send_mail, BadHeaderError
 from rest_framework import viewsets, status
 from django.db.models import Q
@@ -149,30 +152,41 @@ class VerifyOTPView(APIView):
     def post(self, request):
         email = request.data.get('email')
         otp = request.data.get('otp')
-        hospital = Hospital.objects.filter(email=email).first()
-        print(hospital)
 
+        user = User.objects.filter(email=email).first()
+        hospital = Hospital.objects.filter(email=email).first()
+
+        if user:
+            otp_obj = OTP.objects.filter(user=user, otp=otp, expires_at__gte=timezone.now()).first()
+            if otp_obj:
+                otp_obj.delete()
+                return Response({"message": "OTP verified"}, status=status.HTTP_200_OK)
+            return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+        
         if hospital:
-            print(",,,,,,,,")
             otp_obj = HospitalOTP.objects.filter(hospital=hospital, otp=otp, expires_at__gte=timezone.now()).first()
             if otp_obj:
                 otp_obj.delete()
                 return Response({"message": "OTP verified"}, status=status.HTTP_200_OK)
             return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"error": "Hospital not found"}, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response({"error": "User or Hospital not found"}, status=status.HTTP_400_BAD_REQUEST)
+
 class HospitalAdditional(APIView):
-    def patch(self, request, hospitalEmail):  # Adjust parameter name to match URL
+    # Specify parsers to handle file uploads
+    parser_classes = (MultiPartParser, FormParser)
+
+    def patch(self, request, hospitalEmail):
         try:
             instance = Hospital.objects.get(email=hospitalEmail)  # Query based on email
         except Hospital.DoesNotExist:
             return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        # Pass the incoming data to the serializer with `partial=True` for partial updates
         serializer = HospitalAdditionalInfoSerializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
@@ -224,13 +238,23 @@ class DepartmentCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def department_list(request):
+    if request.method == 'GET':
+        departments = Department.objects.filter(hospital=request.user.hospital)
+        serializer = DepartmentSerializer(departments, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = DepartmentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(hospital=request.user.hospital)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# @csrf_exempt
-# def hospital_logout(request):
-#     if request.method == 'POST':
-#         logout(request)
-#         return JsonResponse({'message': 'Logout successful'})
-#     return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
 
 # admin
 class AdminLoginView(APIView):
@@ -250,17 +274,63 @@ class HospitalRequestsView(APIView):
         serializer = HospitalRegistrationSerializer(hospitals, many=True)
         return Response(serializer.data)
 
-
 class ApproveHospitalView(APIView):
     def post(self, request, id):
-        print(f'ID received in the view: {id}')  # Add this line to debug the id being received
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             hospital = Hospital.objects.get(id=id)
             hospital.is_approved = True
             hospital.save()
-            return Response({'message': 'Hospital approved successfully'}, status=status.HTTP_200_OK)
+
+            try:
+                send_mail(
+                    'Hospital Registration Approved',
+                    'Congratulations! Your hospital registration has been approved.',
+                    settings.EMAIL_HOST_USER,
+                    [email],
+                    fail_silently=False,
+                )
+            except BadHeaderError:
+                return Response({'error': 'Invalid header found.'}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({'message': 'Hospital approved and notification sent successfully'}, status=status.HTTP_200_OK)
         except Hospital.DoesNotExist:
             return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class RejectHospitalView(APIView):
+    def post(self, request, id):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            hospital = Hospital.objects.get(id=id)
+            hospital.delete()  
+
+            try:
+                send_mail(
+                    'Hospital Registration Rejected',
+                    'We regret to inform you that your hospital registration has been rejected.',
+                    settings.EMAIL_HOST_USER,
+                    [email],
+                    fail_silently=False,
+                )
+            except BadHeaderError:
+                return Response({'error': 'Invalid header found.'}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({'message': 'Hospital rejected and notification sent successfully'}, status=status.HTTP_200_OK)
+        except Hospital.DoesNotExist:
+            return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        
 
 class HospitalListView(APIView):
     def get(self, request):
@@ -275,8 +345,76 @@ def get_patients(request):
         serializer = UserRegistrationSerializer(patient,many=True)
         return Response(serializer.data)
     
+class ToggleUserStatusView(APIView):
+    def post(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        user.is_active = not user.is_active
+        user.save()
+        return Response({'status': 'success', 'is_active': user.is_active}, status=status.HTTP_200_OK)
+    
+class BlockUnblockHospitalView(APIView):
+    def post(self, request, hospital_id):
+        hospital = get_object_or_404(Hospital, id=hospital_id)
+        action = request.data.get('action')
+
+        if action == 'block':
+            hospital.is_approved = False
+            hospital.is_active = False
+        elif action == 'unblock':
+            hospital.is_approved = True
+            hospital.is_active = True
+        else:
+            return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+
+        hospital.save()
+        return Response({'status': 'success', 'is_approved': hospital.is_approved}, status=status.HTTP_200_OK)
 
 
+@csrf_exempt
+def get_blocked_patients(request):
+    print("mmmmmmmmmmmmmmmmmmmmm")
+    if request.method == 'GET':
+        blocked_patients = User.objects.filter(is_active=False)
+        print(blocked_patients)
+        data = list(blocked_patients.values('id', 'username', 'email'))
+        return JsonResponse(data, safe=False)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+def get_blocked_hospitals(request):
+    if request.method == 'GET':
+        blocked_hospitals = Hospital.objects.filter(is_active=False)
+        data = list(blocked_hospitals.values('id', 'hospital_name', 'email', 'phone_number', 'address', 'district', 'photo'))
+        return JsonResponse(data, safe=False)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+class HospitalDetailView(APIView):
+    parser_classes = (MultiPartParser, FormParser)  # Add this line if handling file uploads
+
+    def get(self, request, id):
+        print(f'ID received in the view: {id}') 
+        print(id)
+        try:
+            hospital = Hospital.objects.get(id=id)
+            serializer = HospitalSerializer(hospital)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Hospital.DoesNotExist:
+            return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
+       
+class HospitalDepartmentsView(APIView):
+    def get(self, request, id):
+        try:
+            hospital = Hospital.objects.get(id=id)
+            departments = Department.objects.filter(hospital=hospital)
+            serializer = DepartmentSerializer(departments, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Hospital.DoesNotExist:
+            return Response({'error': 'Hospital not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+
+
+# Patient 
 @api_view(['POST'])
 def register_patient(request):
     if request.method == 'POST':
@@ -285,6 +423,7 @@ def register_patient(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
 
 class PatientLoginView(APIView):
     def post(self, request):
@@ -305,156 +444,31 @@ class PatientLoginView(APIView):
             'token': str(refresh.access_token),
         }, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-def create_department(request):
-    serializer = DepartmentSerializer(data=request.data, context={'request': request})
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def get_districts(request):
+    print('Fetching approved districts...')
+    # Fetch districts from approved hospitals
+    districts = Hospital.objects.filter(is_approved=True).values_list('district', flat=True).distinct()
+    return JsonResponse({'districts': list(districts)})
+
+def get_hospitals_by_district(request, district):
+    hospitals = Hospital.objects.filter(district=district, is_approved=True).values_list('hospital_name', flat=True)
+    return JsonResponse({'hospitals': list(hospitals)})
 
 
 
-
-
-
-
-
-
-
-
-
-# @api_view(['GET', 'POST'])
-# @permission_classes([IsAuthenticated])
-# def department_list(request):
-#     if request.method == 'GET':
-#         departments = Department.objects.filter(hospital=request.user.hospital)
-#         serializer = DepartmentSerializer(departments, many=True)
-#         return Response(serializer.data)
-    
-#     elif request.method == 'POST':
-#         serializer = DepartmentSerializer(data=request.data, context={'request': request})
-#         print(',,,,,,,,,,,,,,,,,')
-#         print(serializer)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-
-@api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def department_detail(request, pk):
+def get_departments_by_hospital(request, hospital_name):
     try:
-        department = Department.objects.get(pk=pk, hospital=request.user.hospital)
-    except Department.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    
-    if request.method == 'GET':
-        serializer = DepartmentSerializer(department)
-        return Response(serializer.data)
-    
-    elif request.method == 'PUT':
-        serializer = DepartmentSerializer(department, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
-        department.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# class DepartmentListCreateAPIView(generics.ListCreateAPIView):
-#     queryset = Department.objects.all()
-#     serializer_class = DepartmentSerializer
-
-#     def perform_create(self, serializer):
-#         # Associate department with the logged-in hospital user
-#         serializer.save(hospital=self.request.user.hospital)
-
-
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def create_department(request):
-#     serializer = DepartmentSerializer(data=request.data)
-#     if serializer.is_valid():
-#         serializer.save(hospital=request.user.hospital)  # Assuming you have a way to associate with the hospital
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        # Fetch the hospital based on the name
+        hospital = Hospital.objects.get(name=hospital_name)
+        departments = Department.objects.filter(hospital=hospital)
+        
+        # Serialize the department data
+        department_list = [{'id': dept.id, 'name': dept.name} for dept in departments]
+        
+        return JsonResponse({'departments': department_list})
+    except Hospital.DoesNotExist:
+        return JsonResponse({'error': 'Hospital not found'}, status=404)
 
 
 
@@ -463,43 +477,7 @@ def department_detail(request, pk):
 
     
 
-    
+
+
   
            
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def department_list(request):
-    if request.method == 'GET':
-        departments = Department.objects.filter(hospital=request.user.hospital)
-        serializer = DepartmentSerializer(departments, many=True)
-        return Response(serializer.data)
-    
-    elif request.method == 'POST':
-        serializer = DepartmentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(hospital=request.user.hospital)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def department_detail(request, pk):
-    try:
-        department = Department.objects.get(pk=pk, hospital=request.user.hospital)
-    except Department.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    
-    if request.method == 'GET':
-        serializer = DepartmentSerializer(department)
-        return Response(serializer.data)
-    
-    elif request.method == 'PUT':
-        serializer = DepartmentSerializer(department, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
-        department.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)

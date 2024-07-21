@@ -1,7 +1,7 @@
 import toast from "react-hot-toast";
 import axios from 'axios';
 
-export default async function hosLogin(e) {
+export default async function Login(e) {
     e.preventDefault(); // Prevent default form submission
 
     try {

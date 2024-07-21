@@ -25,6 +25,9 @@ import HospiAdditional from './Home/Home/HospiAdditional';
 import LoginOTP from './Home/Home/LoginOTP';
 import HospitalDepartment from './Hospital/HosComponents/HospitalDepartment';
 import HospitalProfile from './Hospital/HosComponents/HospitalProfile';
+import BlockedPatHos from './admin/AdminComponents/BlockedPatHos';
+import HospitalDetails from './admin/AdminComponents/HospitalDetails';
+import HospitalDepartments from './admin/AdminComponents/HospitalDepartments';
 
 const App = () => (
     <div>
@@ -38,7 +41,7 @@ const App = () => (
 
             <Route path="/register/patient" element={<SignUp  />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/bookup" element={<Bookup />} />
+            <Route path="/bookop" element={<Bookup />} />
             
 
 
@@ -63,7 +66,11 @@ const App = () => (
             <Route path="/patients" element={<PatientPage />} />
             <Route path="/HospitalRequests"element={<HospitalRequestsPage/>} />
             <Route path="/Hospitals"element={<HospitalPages/>} />
-
+            <Route path="/status"element={<BlockedPatHos/>} />
+            <Route path="/hospitaldetails/:id" element={<HospitalDetails />} />
+            <Route path="/hospitaldepartments/:id" element={<HospitalDepartments />} />
+            
+           
             
         </Routes>
     </div>
