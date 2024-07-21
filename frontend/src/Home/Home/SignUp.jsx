@@ -122,7 +122,7 @@ const SignUp = () => {
 
   return (
     <div>
-      <Navbar />
+     
       <div style={{ 
         backgroundImage: `url(${backgroundImg})`, 
         backgroundSize: 'cover', 
@@ -132,6 +132,7 @@ const SignUp = () => {
         display: 'flex', 
         flexDirection: 'column' 
       }}>
+         <Navbar />
         <ThemeProvider theme={theme}>
           <Container component="main" maxWidth="xs" sx={{ 
             height: '100%', 

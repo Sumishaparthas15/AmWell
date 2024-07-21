@@ -12,7 +12,7 @@ const HospitalPanel = () => {
     useEffect(() => {
         const storedEmail = localStorage.getItem('hospitalEmail');
         if (!storedEmail) {
-            navigate('/hospital_login'); // Redirect to login if no email is found
+            navigate('/LOGIN'); // Redirect to login if no email is found
         } else {
             setEmail(storedEmail);
         }
@@ -31,7 +31,7 @@ const HospitalPanel = () => {
         localStorage.removeItem('hospitalEmail');
         // Optionally remove other session-related data here
         // Navigate to login page
-        navigate('/hospital_login');
+        navigate('/LOGIN');
     };
 
     const styles = {

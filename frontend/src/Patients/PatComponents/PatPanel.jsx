@@ -19,7 +19,7 @@ const PatPanel = () => {
   useEffect(() => {
     const storedEmail = localStorage.getItem('patientEmail');
     if (!storedEmail) {
-      navigate('/login'); // Redirect to login if no email is found
+      navigate('/LOGIN'); // Redirect to login if no email is found
     } else {
       setEmail(storedEmail);
     }
@@ -27,7 +27,7 @@ const PatPanel = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('patientEmail');
-    navigate('/login');
+    navigate('/LOGIN');
   };
 
   const styles = {

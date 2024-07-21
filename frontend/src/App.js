@@ -28,12 +28,13 @@ import HospitalProfile from './Hospital/HosComponents/HospitalProfile';
 import BlockedPatHos from './admin/AdminComponents/BlockedPatHos';
 import HospitalDetails from './admin/AdminComponents/HospitalDetails';
 import HospitalDepartments from './admin/AdminComponents/HospitalDepartments';
+import Login1 from './Login/Login1';
 
 const App = () => (
     <div>
         <Routes>
             <Route path="/" element={<HomePage />} />
-            
+            <Route path='/LOGIN' element={<Login1 />} />
             
 
 

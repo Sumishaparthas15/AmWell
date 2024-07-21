@@ -14,6 +14,7 @@ import Navbar from '../Navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
 import dr from '../../images/hos5.jpg';
 import OTPVerification from './OTPVerification';
+import '../Navbar/Navbar.css'
 
 const theme = createTheme();
 
@@ -116,7 +117,7 @@ const HosSignUp = () => {
 
   return (
     <div>
-      <Navbar />
+    
       <div style={{ 
         backgroundImage: `url(${dr})`, 
         backgroundSize: 'cover', 
@@ -126,6 +127,7 @@ const HosSignUp = () => {
         display: 'flex', 
         flexDirection: 'column' 
       }}>
+          <Navbar />
         <ThemeProvider theme={theme}>
           <Container component="main" maxWidth="xs">
             <CssBaseline />

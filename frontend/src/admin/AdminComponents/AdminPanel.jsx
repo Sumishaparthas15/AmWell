@@ -32,7 +32,7 @@ const AdminPanel = () => {
    
     const handleLogout = () => {
         localStorage.removeItem('token');
-        navigate('/admin');
+        navigate('/LOGIN');
       };
 
   return (
