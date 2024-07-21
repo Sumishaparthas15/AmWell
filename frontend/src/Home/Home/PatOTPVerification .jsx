@@ -3,7 +3,7 @@ import { Button, TextField, Box, Typography } from '@mui/material';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
-const PatOTPVerification = ({ email, userType }) => {
+const PatOTPVerification  = ({ email, userType }) => {
   const [otp, setOtp] = useState('');
   const navigate = useNavigate();
 
@@ -60,4 +60,4 @@ const PatOTPVerification = ({ email, userType }) => {
   );
 };
 
-export default PatOTPVerification;
+export default PatOTPVerification ;
