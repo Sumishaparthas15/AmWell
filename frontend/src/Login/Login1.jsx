@@ -1,6 +1,21 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Avatar, Button, CssBaseline, TextField, Link, Grid, Box, Typography, Container, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import {
+  Avatar,
+  Button,
+  CssBaseline,
+  TextField,
+  Link,
+  Grid,
+  Box,
+  Typography,
+  Container,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio
+} from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import toast, { Toaster } from 'react-hot-toast';
@@ -30,14 +45,45 @@ const Login1 = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const handleRoleChange = (event) => {
     setRole(event.target.value);
     setOtpSent(false); // Reset OTP state when role changes
   };
 
+  const validateForm = () => {
+    let isValid = true;
+    setEmailError('');
+    setPasswordError('');
+
+    // Validate email
+    if (!email) {
+      setEmailError('Email is required');
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      setEmailError('Invalid email format');
+      isValid = false;
+    }
+
+    // Validate password
+    if (!password) {
+      setPasswordError('Password is required');
+      isValid = false;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters long');
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) return; // Exit if form validation fails
+
     try {
       if (role === 'patient') {
         await axios.post('http://localhost:8080/api/patient_login/', { email, password });
@@ -117,6 +163,8 @@ const Login1 = () => {
                   autoFocus
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  error={!!emailError}
+                  helperText={emailError}
                 />
                 <TextField
                   margin="normal"
@@ -129,6 +177,8 @@ const Login1 = () => {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  error={!!passwordError}
+                  helperText={passwordError}
                 />
                 <Button
                   type="submit"

@@ -121,7 +121,7 @@ const HospitalPanel = () => {
                         <Link to='/hospital_departments' className="navbar-brand">Departments</Link>
                     </ul>
                     <ul className="sidebar-menu">
-                        <Link to='/doctors' className="navbar-brand">Doctors</Link>
+                        <Link to='/hospital_doctors' className="navbar-brand">Doctors</Link>
                     </ul>
                     <ul className="sidebar-menu">
                         <Link to='/hospital_bookings' className="navbar-brand">Bookings</Link>

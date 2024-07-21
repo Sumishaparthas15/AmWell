@@ -29,6 +29,7 @@ import BlockedPatHos from './admin/AdminComponents/BlockedPatHos';
 import HospitalDetails from './admin/AdminComponents/HospitalDetails';
 import HospitalDepartments from './admin/AdminComponents/HospitalDepartments';
 import Login1 from './Login/Login1';
+import HospitalDoctors from './Hospital/HosComponents/HospitalDoctors';
 
 const App = () => (
     <div>
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/hospital" element={<Hospital />} />
             <Route path="/hospitalView" element={<HospitalViewPage />} />
             <Route path="/hospital_departments" element={<HospitalDepartment />} />
+            <Route path="/hospital_doctors" element={<HospitalDoctors />} />
             <Route path="/hospital_profile" element={<HospitalProfile />} />
 
 
